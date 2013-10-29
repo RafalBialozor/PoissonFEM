@@ -1,0 +1,75 @@
+// Definicja geometrii
+// ===================
+// Definicja punktów konturu P(x,y) : x=Px i y=Py
+// --------------------------------------
+//
+// 			gora=4
+// (A[3],B[3]) o------------------------o (A[2],B[2])
+// 		|			|
+// 		| 			|
+// 		| 			|
+// 		| 			|
+// 		|			|
+// lewy=1 	| 			| prawy=3; wyskosc
+// 		| 			|
+// 		| 			|
+// 		| 			|
+// 		| 			|
+// 		| 			|
+// 		| 			|
+// (A[0],B[0]) o------------------------o (A[1],B[1])
+// 			 dol=2; szerokosc
+//
+
+int dlugosc=2, wysokosc=2;
+real[int] A(4), B(4);
+A[0]=0 ; B[0]=0 ;
+A[1]=dlugosc ; B[1]=0 ;
+A[2]=dlugosc ; B[2]=wysokosc ;
+A[3]=0 ; B[3]=wysokosc ;
+// Definicja konturu
+// --------------------------------------
+int lewy=1; // Numery brzegów konturu
+int dolny=2; //
+int prawy=3; //
+int gorny=4; //
+
+// Definicja brzegu okreslona funkcjami parametrycznymi x=f(t), y=g(t)
+// definicja zgodna z obiegiem w lewo
+border left(t=wysokosc,0) {x=0; y=t;label=lewy;}; //
+border bottom(t=0,dlugosc) {x=t; y=0;label=dolny;}; //
+border right(t=0,wysokosc) {x=dlugosc; y=t;label=prawy;};
+border top(t=dlugosc,0) {x=t; y=wysokosc;label=gorny;};
+
+
+// Generacja siatki
+// ================
+// Definicja podzia³u krawêdzi
+
+// --------------------------------------------------
+int NpSzerokosc=10 ; // liczba podzia³ow krawêdzi
+int NpDlugosc=10 ; //
+//
+// Triangularyzacja
+// -----------------------------------------
+mesh siatka=buildmesh(left(NpSzerokosc)+top(NpDlugosc)
++right(NpSzerokosc)+bottom(NpDlugosc));
+// Krelenie trójk¹tów
+plot(siatka);
+
+
+fespace Vh(siatka,P1);
+//
+func f= 45;
+int k=4;
+Vh u,v;
+problem Poisson(u,v,solver=LU) =
+int2d(siatka)(k*dx(u)*dx(v) + k*dy(u)*dy(v))
+-int2d(siatka)( f*v  ) - int1d(siatka,left)((0*v))
+ - int1d(siatka,bottom)((-30*v))
+ - int1d(siatka,top)((-30*v))
++ on(right,u=10);
+-int2d(siatka)( f*v  ) - int1d(siatka,D)((0*v));
+real cpu=clock();
+Poisson; 
+plot(u, value=true, fill=true, cmm="Rozklad temperatury");
