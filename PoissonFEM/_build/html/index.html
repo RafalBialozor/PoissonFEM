@@ -1,0 +1,297 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Rozwiązanie równania Poissona, Metodą Elementów skończonych: &mdash; PoissonFEM 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PoissonFEM 1.0.0 documentation" href="#" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="#">PoissonFEM 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="rozwiazanie-rownania-poissona-metoda-elementow-skonczonych">
+<h1>Rozwiązanie równania Poissona, Metodą Elementów skończonych:<a class="headerlink" href="#rozwiazanie-rownania-poissona-metoda-elementow-skonczonych" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="section" id="rownanie-poissona">
+<h2>Równanie Poissona:<a class="headerlink" href="#rownanie-poissona" title="Permalink to this headline">¶</a></h2>
+<p>W ogólnym przypadku równanie Poissona ma postać:</p>
+<div class="math">
+\[\frac{\partial ^{2}}{\partial x^{2}} u(x,y,z)+
+\frac{\partial ^{2}}{\partial y^{2}} u(x,y,z)+
+\frac{\partial ^{2}}{\partial z^{2}} u(x,y,z) = f(x,y,z)\]</div>
+<p>lub zapisując krócej:</p>
+<div class="math">
+\[\nabla ^{2} u = f\]</div>
+</div>
+<div class="section" id="przyklad-1">
+<h2>Przykład 1<a class="headerlink" href="#przyklad-1" title="Permalink to this headline">¶</a></h2>
+<a class="reference internal image-reference" href="zad.png"><img alt="zad.png" src="zad.png" style="width: 700px; height: 360px;" /></a>
+<p>Równanie Poissona opisujące zjawisko ustalonego przepływu ciepła w obszarze dwuwymiarowym dla materiału jednorodnego i izotropowego o stałej grubości ma postać:</p>
+<div class="math">
+\[\frac{\partial ^{2}T}{\partial x^{2}} +
+\frac{\partial ^{2}T}{\partial y^{2}}
+ = \frac{f}{k}\]</div>
+<p>Zdefiniujmy obszar w ktorym poszukiwać będziemy naszego rozwiązania.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nb">int</span> <span class="n">dlugosc</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">wysokosc</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span>
+
+<span class="n">border</span> <span class="n">left</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">wysokosc</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">y</span><span class="o">=</span><span class="n">t</span><span class="p">;};</span>
+<span class="n">border</span> <span class="n">bottom</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">dlugosc</span><span class="p">)</span> <span class="p">{</span><span class="n">x</span><span class="o">=</span><span class="n">t</span><span class="p">;</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">;};</span>
+<span class="n">border</span> <span class="n">right</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">wysokosc</span><span class="p">)</span> <span class="p">{</span><span class="n">x</span><span class="o">=</span><span class="n">dlugosc</span><span class="p">;</span> <span class="n">y</span><span class="o">=</span><span class="n">t</span><span class="p">;};</span>
+<span class="n">border</span> <span class="n">top</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">dlugosc</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span><span class="n">x</span><span class="o">=</span><span class="n">t</span><span class="p">;</span> <span class="n">y</span><span class="o">=</span><span class="n">wysokosc</span><span class="p">;};</span>
+</pre></div>
+</div>
+<p>Brzeg obszaru określa się przy użyciu funkcji parametrycznych :</p>
+<div class="math">
+\[\Gamma_{j} = [ (x,y)  |   x = \phi_{x}(t) ,  y = \phi_{y}(t),  a_{j} \le t \le b_{j}  ]\]</div>
+<p>Zdefiniowany brzeg zgodny jest z obiegiem w lewo. Definiowanie brzegów obszarów zgodnie z obiegiem,
+jest istotną sprawą przy definiowaniu otworów w zadanym obszarze, tym problemem zajmiemy się jednak później.</p>
+<p>Generowanie siatki trójkątnej.
+Zdefiniujmy zmienne typu int określające liczbę węzłów zadanych na brzegach obszaru oraz poleceniem
+<tt class="docutils literal"><span class="pre">mesh</span> <span class="pre">nazwa_siatki</span> <span class="pre">=</span> <span class="pre">buildmesh(definicja</span> <span class="pre">brzegu);</span></tt> wygenerujmy siatkę:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nb">int</span> <span class="n">NpSzerokosc</span><span class="o">=</span><span class="mi">10</span> <span class="p">;</span>
+<span class="nb">int</span> <span class="n">NpDlugosc</span><span class="o">=</span><span class="mi">10</span> <span class="p">;</span>
+
+<span class="n">mesh</span> <span class="n">siatka</span><span class="o">=</span><span class="n">buildmesh</span><span class="p">(</span><span class="n">left</span><span class="p">(</span><span class="n">NpSzerokosc</span><span class="p">)</span><span class="o">+</span><span class="n">top</span><span class="p">(</span><span class="n">NpDlugosc</span><span class="p">)</span>
+<span class="o">+</span><span class="n">right</span><span class="p">(</span><span class="n">NpSzerokosc</span><span class="p">)</span><span class="o">+</span><span class="n">bottom</span><span class="p">(</span><span class="n">NpDlugosc</span><span class="p">));</span>
+
+<span class="n">plot</span><span class="p">(</span><span class="n">siatka</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Podobnie jak w pythonie, wizualizację obiektów uzykujemy poleceniem <tt class="docutils literal"><span class="pre">plot</span></tt> , przez co uzyskamy siatkę trójkątną (przedstawioną poniżej) o określonej liczbie węzłów na brzegu zadanego obszaru.</p>
+<img alt="s1.png" src="s1.png" />
+<p>Zdefiniujmy część zasadniczą postawionego w zadaniu problemu. Określamy wartości parametrów podanych w zadaniu <tt class="docutils literal"><span class="pre">k</span></tt> i <tt class="docutils literal"><span class="pre">f</span></tt>, następnie określamy warunki brzegowe - dla warunków Neumanna poleceniem
+<tt class="docutils literal"><span class="pre">int1d(siatka,brzeg)((wartosc*v))</span></tt> oraz warunki Dirichleta <tt class="docutils literal"><span class="pre">on(brzeg,zmienna=wartosc)</span></tt></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">fespace</span> <span class="n">Vh</span><span class="p">(</span><span class="n">siatka</span><span class="p">,</span><span class="n">P1</span><span class="p">);</span>
+<span class="n">func</span> <span class="n">f</span><span class="o">=</span><span class="mi">45</span><span class="p">;</span>
+<span class="nb">int</span> <span class="n">k</span><span class="o">=</span><span class="mi">4</span><span class="p">;</span>
+<span class="n">Vh</span> <span class="n">u</span><span class="p">,</span><span class="n">v</span><span class="p">;</span>
+<span class="n">problem</span> <span class="n">Poisson</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">v</span><span class="p">,</span><span class="n">solver</span><span class="o">=</span><span class="n">LU</span><span class="p">)</span> <span class="o">=</span>
+<span class="n">int2d</span><span class="p">(</span><span class="n">siatka</span><span class="p">)(</span><span class="n">k</span><span class="o">*</span><span class="n">dx</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">+</span> <span class="n">k</span><span class="o">*</span><span class="n">dy</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">*</span><span class="n">dy</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+<span class="o">-</span> <span class="n">int2d</span><span class="p">(</span><span class="n">siatka</span><span class="p">)(</span> <span class="n">f</span><span class="o">*</span><span class="n">v</span>  <span class="p">)</span> <span class="o">-</span> <span class="n">int1d</span><span class="p">(</span><span class="n">siatka</span><span class="p">,</span><span class="n">left</span><span class="p">)((</span><span class="mi">0</span><span class="o">*</span><span class="n">v</span><span class="p">))</span>
+<span class="o">-</span> <span class="n">int1d</span><span class="p">(</span><span class="n">siatka</span><span class="p">,</span><span class="n">bottom</span><span class="p">)((</span><span class="o">-</span><span class="mi">30</span><span class="o">*</span><span class="n">v</span><span class="p">))</span>
+<span class="o">-</span> <span class="n">int1d</span><span class="p">(</span><span class="n">siatka</span><span class="p">,</span><span class="n">top</span><span class="p">)((</span><span class="o">-</span><span class="mi">30</span><span class="o">*</span><span class="n">v</span><span class="p">))</span>
+<span class="o">+</span> <span class="n">on</span><span class="p">(</span><span class="n">right</span><span class="p">,</span><span class="n">u</span><span class="o">=</span><span class="mi">10</span><span class="p">);</span>
+
+<span class="n">Poisson</span><span class="p">;</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">true</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">true</span><span class="p">,</span> <span class="n">cmm</span><span class="o">=</span><span class="s">&quot;Rozklad temperatury&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Po wykonaniu wywołaniu powyższego kodu otrzymamy mapy rozkładu temperatur w rozpatrywanym obszarze dla ustalonych warunków brzegowych:</p>
+<img alt="s3.png" src="s3.png" />
+<div class="section" id="rozwiazanie-analityczne">
+<h3>Rozwiazanie analityczne<a class="headerlink" href="#rozwiazanie-analityczne" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="przyklad-2">
+<h2>Przykład 2<a class="headerlink" href="#przyklad-2" title="Permalink to this headline">¶</a></h2>
+<p>Metoda elementów skończonych umożliwa znajdowanie przybliżonych rozwiązań problemów których
+nie sposób rozwiązać w sposób analityczny lub rozwiązanie to jest bardzo trudne do uzyskania.
+Rozważmy nieco trudniejszy przypadek ustalonego przepływu ciepła przez materiał z pustkami powietrznymi.
+Przykładem takiego materiału jest pustak typu POROTHERM, stosowany w szeroko pojętym budownictwie mieszkaniowym. Kształt pustaka przybliżono prostokątem o wymiarach ::240x180 mm::, a
+współczynnik przewodzenia ciepła przyjęto jako <span class="math">\(k = 0.3 \frac{W}{m \circ C}\)</span></p>
+<p>Określamy brzeg obszaru:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">real</span> <span class="n">dlugosc</span><span class="o">=</span><span class="mf">0.24</span><span class="p">,</span> <span class="n">wysokosc</span><span class="o">=</span><span class="mf">0.18</span><span class="p">;</span>
+
+<span class="n">border</span> <span class="n">left</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">wysokosc</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">y</span><span class="o">=</span><span class="n">t</span><span class="p">;};</span>
+<span class="n">border</span> <span class="n">bottom</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">dlugosc</span><span class="p">)</span> <span class="p">{</span><span class="n">x</span><span class="o">=</span><span class="n">t</span><span class="p">;</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">;};</span>
+<span class="n">border</span> <span class="n">right</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">wysokosc</span><span class="p">)</span> <span class="p">{</span><span class="n">x</span><span class="o">=</span><span class="n">dlugosc</span><span class="p">;</span> <span class="n">y</span><span class="o">=</span><span class="n">t</span><span class="p">;};</span>
+<span class="n">border</span> <span class="n">top</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">dlugosc</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span><span class="n">x</span><span class="o">=</span><span class="n">t</span><span class="p">;</span> <span class="n">y</span><span class="o">=</span><span class="n">wysokosc</span><span class="p">;};</span>
+</pre></div>
+</div>
+<p>Aby zdefiniować podobszary nie objęte siątką wewnątrz rozpatrywanego obszaru należy w sposób analogiczny  do powyższego określić jego brzegi, a także zastosować się do zasady na poniższym rysunku:</p>
+<img alt="bound.png" class="align-center" src="bound.png" />
+<p>mowiącej tyle, że przy obiegu w prawo po konturze otworu, znak zmiennej ilości węzłów zaadaptowanych do stworzenia siatki powinien być dodatni.
+Definicja podobszaru:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">real</span> <span class="n">h</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">0.01</span><span class="p">;</span>
+
+<span class="n">border</span> <span class="n">A11</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.01</span><span class="p">){</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.01</span><span class="o">+</span><span class="n">t</span><span class="p">;</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.06</span><span class="p">;</span>   <span class="p">}</span>
+<span class="n">border</span> <span class="n">A12</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.05</span><span class="p">){</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.02</span><span class="p">;</span>   <span class="n">y</span><span class="o">=</span><span class="mf">0.06</span><span class="o">-</span><span class="n">t</span><span class="p">;</span> <span class="p">}</span>
+<span class="n">border</span> <span class="n">A13</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.01</span><span class="p">){</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.02</span><span class="o">-</span><span class="n">t</span><span class="p">;</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.01</span><span class="p">;</span>   <span class="p">}</span>
+<span class="n">border</span> <span class="n">A14</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.05</span><span class="p">){</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.01</span><span class="p">;</span>   <span class="n">y</span><span class="o">=</span><span class="mf">0.01</span><span class="o">+</span><span class="n">t</span><span class="p">;</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>Określając ilość węzłów na poszczeglnych brzegach generujemy siatkę pamiętając by poobszarom przypisując znak dodatni:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nb">int</span> <span class="n">Np</span><span class="o">=</span><span class="mi">20</span><span class="p">;</span>
+<span class="nb">int</span> <span class="n">NpSzerokosc</span><span class="o">=</span><span class="mi">100</span> <span class="p">;</span>
+<span class="nb">int</span> <span class="n">NpDlugosc</span><span class="o">=</span><span class="mi">100</span> <span class="p">;</span>
+
+<span class="n">mesh</span> <span class="n">siatka</span><span class="o">=</span><span class="n">buildmesh</span><span class="p">(</span>
+
+<span class="n">left</span><span class="p">(</span><span class="n">NpSzerokosc</span><span class="p">)</span><span class="o">+</span><span class="n">top</span><span class="p">(</span><span class="n">NpDlugosc</span><span class="p">)</span>
+<span class="o">+</span><span class="n">right</span><span class="p">(</span><span class="n">NpSzerokosc</span><span class="p">)</span><span class="o">+</span><span class="n">bottom</span><span class="p">(</span><span class="n">NpDlugosc</span><span class="p">)</span>
+<span class="p">);</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">siatka</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Podobnie postępując przy definiowaniu kolejnych współrzędnych konturów pustek powietrznych otrzymujemy siatkę:</p>
+<img alt="2.png" class="align-center" src="2.png" />
+<p>Definiując jak w poprzednim przykładzie zasadniczą część rozwiązującą nasze zadanie, dobrano warunki brzegowe zakładając
+- brak przepływu ciepła przez pustki powietrza (przyjmowane domyślnie przez program nie objęty siatką),
+- brak przepływu w kierunku pionowym
+- ustalono wartość temperatury na brzegu prawym
+- ustalony strumień ciepła na brzegu lewym</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">fespace</span> <span class="n">Vh</span><span class="p">(</span><span class="n">siatka</span><span class="p">,</span><span class="n">P1</span><span class="p">);</span>
+<span class="n">func</span> <span class="n">f</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="n">real</span> <span class="n">k</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">;</span>
+<span class="n">Vh</span> <span class="n">u</span><span class="p">,</span><span class="n">v</span><span class="p">;</span>
+<span class="n">problem</span> <span class="n">Poisson</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">v</span><span class="p">,</span><span class="n">solver</span><span class="o">=</span><span class="n">LU</span><span class="p">)</span> <span class="o">=</span>
+<span class="n">int2d</span><span class="p">(</span><span class="n">siatka</span><span class="p">)(</span><span class="n">k</span><span class="o">*</span><span class="n">dx</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">+</span> <span class="n">k</span><span class="o">*</span><span class="n">dy</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">*</span><span class="n">dy</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+<span class="o">-</span> <span class="n">int2d</span><span class="p">(</span><span class="n">siatka</span><span class="p">)(</span> <span class="n">f</span><span class="o">*</span><span class="n">v</span>  <span class="p">)</span>
+<span class="o">-</span> <span class="n">int1d</span><span class="p">(</span><span class="n">siatka</span><span class="p">,</span><span class="n">bottom</span><span class="p">)((</span><span class="mi">0</span><span class="o">*</span><span class="n">v</span><span class="p">))</span>
+<span class="o">-</span> <span class="n">int1d</span><span class="p">(</span><span class="n">siatka</span><span class="p">,</span><span class="n">top</span><span class="p">)((</span><span class="mi">0</span><span class="o">*</span><span class="n">v</span><span class="p">))</span>
+<span class="o">-</span> <span class="n">int1d</span><span class="p">(</span><span class="n">siatka</span><span class="p">,</span><span class="n">left</span><span class="p">)((</span><span class="mi">4</span><span class="o">*</span><span class="n">v</span><span class="p">))</span>
+<span class="o">+</span> <span class="n">on</span><span class="p">(</span><span class="n">right</span><span class="p">,</span><span class="n">u</span><span class="o">=-</span><span class="mi">10</span><span class="p">);</span>
+<span class="n">Poisson</span><span class="p">;</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">true</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">true</span><span class="p">,</span> <span class="n">cmm</span><span class="o">=</span><span class="s">&quot;Rozklad temperatury&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Przez co otryzmujemy mapę temperatury:</p>
+<img alt="3.png" src="3.png" />
+<p>W tym miejscu można zadać pytanie - &#8220;Czy pustki powietrza mają istotny wpływ na przepływ ciepła&#8221;?
+Choć odpowiedź jest oczywista, przekonajmy się rozwiązując to samo zadanie, usuwając utworzone podobszary.
+W ten sposób uzyskujemy:</p>
+<img alt="1.png" src="1.png" />
+<p>Otrzymany rezultat zgodny jest z przewidywaniami. Oprócz pytania &#8216;czy&#8217; przykład pokazuje &#8216;jak&#8217; wpływa obecność pustek powietrza na przepływ ciepła. Należy pamiętać, że w przedstawionym tu modelu i obliczeniach pominięto istotne dla sytuacji rzeczywistych aspekty przepływu ciepła,a przykład posłużyłył jedynie do ukazania mnogości problemów możliwych do rozwiązania metodą elementów skończonych.</p>
+</div>
+<div class="section" id="przyklad-3">
+<h2>Przykład 3<a class="headerlink" href="#przyklad-3" title="Permalink to this headline">¶</a></h2>
+<p>W stosunkowo łatwy sposób można uzyskać także rozkład potencjału poza nieruchomymi przewodnikami dla ich dowolnej konfiguracji o zadanym potencjale. Jak wiadomo wszędzie poza przewodnikami
+potencjał <span class="math">\(\phi\)</span> musi spełniać równanie Laplace&#8217;a: <span class="math">\(\nabla ^{2}\phi = 0\)</span> Które dla zagadnienia w dwóch wymiarach o współrzednych kartezjańskich przyjmuje postać:</p>
+<div class="math">
+\[\frac{\partial ^{2}\phi}{\partial x^{2}} +
+\frac{\partial ^{2}\phi}{\partial y^{2}}
+ = 0\]</div>
+<p>Rozozpatrzmy szkolny przypadek rozkładu potencjału wokół układu 3 kulek o różnym potencjale, z dala od zewnęrznych pól elektrycznych. Zdefinujmy geometrię obszaru wraz z rozkładem kulek.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">border</span> <span class="n">C0</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="p">)</span> <span class="p">{</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">);</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">);</span> <span class="p">}</span>
+
+<span class="n">border</span> <span class="n">K1</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="p">)</span> <span class="p">{</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">2</span><span class="o">+</span><span class="mf">0.3</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">);</span> <span class="n">y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="o">+</span><span class="mf">0.3</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">);</span> <span class="p">}</span>
+<span class="n">border</span> <span class="n">K2</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="p">)</span> <span class="p">{</span> <span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="o">+</span><span class="mf">0.3</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">);</span> <span class="n">y</span> <span class="o">=</span> <span class="mf">0.3</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">);</span> <span class="p">}</span>
+<span class="n">border</span> <span class="n">K3</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="p">)</span> <span class="p">{</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">2</span><span class="o">+</span><span class="mf">0.3</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">);</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">2</span><span class="o">+</span><span class="mf">0.3</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">);</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>Na zadanym obszarze rozpinamy siatkę:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mesh</span> <span class="n">Th</span> <span class="o">=</span> <span class="n">buildmesh</span><span class="p">(</span><span class="n">C0</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span><span class="o">+</span><span class="n">C1</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">)</span><span class="o">+</span><span class="n">C2</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">)</span><span class="o">+</span><span class="n">C3</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">));</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">Th</span><span class="p">);</span>
+</pre></div>
+</div>
+<img alt="siatka.png" src="siatka.png" />
+<p>i zapisujemy problem, przypisując przewodnikom kołowym okreslony potencjał:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">fespace</span> <span class="n">Vh</span><span class="p">(</span><span class="n">Th</span><span class="p">,</span><span class="n">P1</span><span class="p">);</span>
+<span class="n">Vh</span> <span class="n">uh</span><span class="p">,</span><span class="n">vh</span><span class="p">;</span>
+
+<span class="n">problem</span> <span class="n">Electro</span><span class="p">(</span><span class="n">uh</span><span class="p">,</span><span class="n">vh</span><span class="p">)</span> <span class="o">=</span> <span class="n">int2d</span><span class="p">(</span><span class="n">Th</span><span class="p">)(</span> <span class="n">dx</span><span class="p">(</span><span class="n">uh</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span><span class="p">(</span><span class="n">vh</span><span class="p">)</span> <span class="o">+</span> <span class="n">dy</span><span class="p">(</span><span class="n">uh</span><span class="p">)</span><span class="o">*</span><span class="n">dy</span><span class="p">(</span><span class="n">vh</span><span class="p">)</span> <span class="p">)</span>
+<span class="o">-</span> <span class="n">int1d</span><span class="p">(</span><span class="n">Th</span><span class="p">,</span><span class="n">C0</span><span class="p">)((</span><span class="mi">0</span><span class="o">*</span><span class="n">vh</span><span class="p">))</span>
+<span class="o">+</span> <span class="n">on</span><span class="p">(</span><span class="n">K1</span><span class="p">,</span><span class="n">uh</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="o">+</span> <span class="n">on</span><span class="p">(</span><span class="n">K2</span><span class="p">,</span><span class="n">uh</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="o">+</span> <span class="n">on</span><span class="p">(</span><span class="n">K3</span><span class="p">,</span><span class="n">uh</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="p">;</span>
+<span class="n">Electro</span><span class="p">;</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">uh</span><span class="p">,</span><span class="n">fill</span><span class="o">=</span><span class="n">true</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">true</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Przez co uzyskujemy obraz potencjału tzw. &#8216;mapę&#8217; potencjału na zadanym obszarze:</p>
+<img alt="mapa.png" src="mapa.png" />
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Rozwiązanie równania Poissona, Metodą Elementów skończonych:</a><ul>
+<li><a class="reference internal" href="#rownanie-poissona">Równanie Poissona:</a></li>
+<li><a class="reference internal" href="#przyklad-1">Przykład 1</a><ul>
+<li><a class="reference internal" href="#rozwiazanie-analityczne">Rozwiazanie analityczne</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#przyklad-2">Przykład 2</a></li>
+<li><a class="reference internal" href="#przyklad-3">Przykład 3</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="#">PoissonFEM 1.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Rafał Białozor.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b3.
+    </div>
+  </body>
+</html>
